@@ -14,6 +14,7 @@ class StreamBackpressure(BaseTransaction):
 
 @dataclass(kw_only=True)
 class StreamDataValid(BaseTransaction):
+    id: int | None = None
     data: int = 0xDEADBEEF
     valid: bool = True
     cycles: int = 0

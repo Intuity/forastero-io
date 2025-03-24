@@ -39,6 +39,7 @@ class AXI4WriteResponse(BaseTransaction):
     response: Resp = Resp.OKAY
     user: int = 0
     valid: int = 1
+    deliver_at_ns: float | None = None
 
 
 @dataclass(kw_only=True)
@@ -65,6 +66,7 @@ class AXI4ReadResponse(BaseTransaction):
     last: bool = False
     user: int = 0
     valid: int = 1
+    deliver_at_ns: float | None = None
 
 
 @dataclass(kw_only=True)

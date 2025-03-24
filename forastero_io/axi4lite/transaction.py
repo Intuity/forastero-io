@@ -26,6 +26,8 @@ class AXI4LiteWriteData(BaseTransaction):
 class AXI4LiteWriteResponse(BaseTransaction):
     response: Resp = Resp.OKAY
     valid: int = 1
+    delay: int = 0
+    deliver_at_ns: float | None = None
 
 
 @dataclass(kw_only=True)
@@ -40,6 +42,8 @@ class AXI4LiteReadResponse(BaseTransaction):
     data: int = 0
     response: Resp = Resp.OKAY
     valid: int = 1
+    delay: int = 0
+    deliver_at_ns: float | None = None
 
 
 @dataclass(kw_only=True)

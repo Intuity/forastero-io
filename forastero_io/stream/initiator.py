@@ -10,6 +10,7 @@ from .transaction import StreamDataValid
 class StreamInitiatorDriver(BaseDriver):
     async def drive(self, transaction: StreamDataValid):
         # Setup the transaction
+        self.io.set("id", transaction.id)
         self.io.set("data", transaction.data)
         self.io.set("valid", transaction.valid)
         if transaction.cycles == 0 and transaction.valid == 1:

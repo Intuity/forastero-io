@@ -23,4 +23,10 @@ class StreamResponderMonitor(BaseMonitor):
             if self.rst.value == 1:
                 continue
             if self.io.get("valid") and self.io.get("ready"):
-                capture(StreamDataValid(data=self.io.get("data"), valid=1))
+                capture(
+                    StreamDataValid(
+                        id=self.io.get("id", None),
+                        data=self.io.get("data"),
+                        valid=1,
+                    )
+                )

@@ -15,12 +15,20 @@ from .io import (
     AXI4WriteDataIO,
     AXI4WriteResponseIO,
 )
+from .memory import AXI4MemoryModel
 from .monitor import (
     AXI4ReadAddressMonitor,
     AXI4ReadResponseMonitor,
     AXI4WriteAddressMonitor,
     AXI4WriteDataMonitor,
     AXI4WriteResponseMonitor,
+)
+from .sequences import (
+    axi4_ar_backpressure,
+    axi4_aw_backpressure,
+    axi4_b_backpressure,
+    axi4_r_backpressure,
+    axi4_w_backpressure,
 )
 from .target import (
     AXI4ReadAddressTarget,
@@ -67,5 +75,11 @@ assert all(
         AXI4ReadAddress,
         AXI4ReadResponse,
         AXI4Backpressure,
+        AXI4MemoryModel,
+        axi4_aw_backpressure,
+        axi4_w_backpressure,
+        axi4_ar_backpressure,
+        axi4_b_backpressure,
+        axi4_r_backpressure,
     )
 )

@@ -5,24 +5,24 @@ import forastero
 from forastero.driver import DriverEvent
 from forastero.sequence import SeqContext, SeqProxy
 
-from .target import AXI4StreamTarget
-from .transaction import AXI4StreamBackpressure
+from .driver import SignalDriver
+from .transaction import SignalState
 
 
 @forastero.sequence(auto_lock=True)
-@forastero.requires("driver", AXI4StreamTarget)
-async def axi4stream_backpressure(
+@forastero.requires("driver", SignalDriver)
+async def random_signal_seq(
     ctx: SeqContext,
-    driver: SeqProxy[AXI4StreamTarget],
+    driver: SeqProxy[SignalDriver],
     min_interval: int = 1,
     max_interval: int = 10,
-    backpressure: float = 0.5,
+    probability: float = 0.5,
 ):
     while True:
         driver.enqueue(
-            AXI4StreamBackpressure(
-                ready=ctx.random.choices(
-                    (True, False), weights=(1.0 - backpressure, backpressure), k=1
+            SignalState(
+                value=ctx.random.choices(
+                    (True, False), weights=(probability, 1.0 - probability), k=1
                 )[0],
                 cycles=ctx.random.randint(min_interval, max_interval),
             )

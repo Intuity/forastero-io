@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2023-2024 Vypercore. All Rights Reserved
 
-from cocotb.triggers import RisingEdge
+from cocotb.triggers import ClockCycles, RisingEdge
+from cocotb.utils import get_sim_time
 from forastero.driver import BaseDriver
 
 from .transaction import (
@@ -60,6 +61,11 @@ class AXI4LiteReadAddressInitiator(BaseDriver):
 
 class AXI4LiteWriteResponseInitiator(BaseDriver):
     async def drive(self, transaction: AXI4LiteWriteResponse):
+        if transaction.delay > 0:
+            await ClockCycles(self.clk, transaction.delay)
+        if transaction.deliver_at_ns is not None:
+            while get_sim_time(units="ns") < transaction.deliver_at_ns:
+                await RisingEdge(self.clk)
         self.io.set("bresp", int(transaction.response))
         self.io.set("bvalid", transaction.valid)
         if transaction.valid:
@@ -74,6 +80,11 @@ class AXI4LiteWriteResponseInitiator(BaseDriver):
 
 class AXI4LiteReadResponseInitiator(BaseDriver):
     async def drive(self, transaction: AXI4LiteReadResponse):
+        if transaction.delay > 0:
+            await ClockCycles(self.clk, transaction.delay)
+        if transaction.deliver_at_ns is not None:
+            while get_sim_time(units="ns") < transaction.deliver_at_ns:
+                await RisingEdge(self.clk)
         self.io.set("rdata", transaction.data)
         self.io.set("rresp", int(transaction.response))
         self.io.set("rvalid", transaction.valid)

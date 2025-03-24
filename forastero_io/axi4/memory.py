@@ -8,33 +8,34 @@ from cocotb.utils import get_sim_time
 from forastero.bench import BaseBench
 from forastero.monitor import MonitorEvent
 
+from .common import Burst
 from .initiator import (
-    AXI4LiteReadResponseInitiator,
-    AXI4LiteWriteResponseInitiator,
+    AXI4ReadResponseInitiator,
+    AXI4WriteResponseInitiator,
 )
 from .monitor import (
-    AXI4LiteReadAddressMonitor,
-    AXI4LiteWriteAddressMonitor,
-    AXI4LiteWriteDataMonitor,
+    AXI4ReadAddressMonitor,
+    AXI4WriteAddressMonitor,
+    AXI4WriteDataMonitor,
 )
 from .transaction import (
-    AXI4LiteReadAddress,
-    AXI4LiteReadResponse,
-    AXI4LiteWriteAddress,
-    AXI4LiteWriteData,
-    AXI4LiteWriteResponse,
+    AXI4ReadAddress,
+    AXI4ReadResponse,
+    AXI4WriteAddress,
+    AXI4WriteData,
+    AXI4WriteResponse,
 )
 
 
-class AXI4LiteMemoryModel:
+class AXI4MemoryModel:
     def __init__(
         self,
         tb: BaseBench,
-        awreq: AXI4LiteWriteAddressMonitor,
-        wreq: AXI4LiteWriteDataMonitor,
-        arreq: AXI4LiteReadAddressMonitor,
-        brsp: AXI4LiteWriteResponseInitiator,
-        rrsp: AXI4LiteReadResponseInitiator,
+        awreq: AXI4WriteAddressMonitor,
+        wreq: AXI4WriteDataMonitor,
+        arreq: AXI4ReadAddressMonitor,
+        brsp: AXI4WriteResponseInitiator,
+        rrsp: AXI4ReadResponseInitiator,
         error_noninit: True,
         rand_noninit: True,
         response_delay: tuple[int, int] = (0, 0),
@@ -58,8 +59,10 @@ class AXI4LiteMemoryModel:
         # Create memory
         self.memory = {}
         # Queues
-        self.q_awreq: list[AXI4LiteWriteAddress] = []
-        self.q_wreq: list[AXI4LiteWriteData] = []
+        self.q_awreq: list[AXI4WriteAddress] = []
+        self.q_wreq: list[AXI4WriteData] = []
+        # Counter for how many wlasts are due for processing
+        self.wlast_count = 0
         # Subscribe to events
         self.awreq.subscribe(MonitorEvent.CAPTURE, self._handle)
         self.wreq.subscribe(MonitorEvent.CAPTURE, self._handle)
@@ -94,25 +97,52 @@ class AXI4LiteMemoryModel:
     def _handle(self, component, event, obj) -> None:
         # Queue AW/W requests, immediately respond to AR requests
         match obj:
-            case AXI4LiteWriteAddress():
+            case AXI4WriteAddress():
                 self.q_awreq.append(obj)
-            case AXI4LiteWriteData():
+            case AXI4WriteData():
                 self.q_wreq.append(obj)
-            case AXI4LiteReadAddress():
-                self.rrsp.enqueue(
-                    AXI4LiteReadResponse(
-                        data=self.read(obj.address),
-                        deliver_at_ns=get_sim_time(units="ns")
-                        + self.random.randint(*self.response_delay),
+                if obj.last:
+                    self.wlast_count += 1
+            case AXI4ReadAddress():
+                # TODO: Implement wrapping logic
+                if obj.burst != Burst.INCR:
+                    raise NotImplementedError
+                for i in range(obj.length + 1):
+                    self.rrsp.enqueue(
+                        AXI4ReadResponse(
+                            axid=obj.axid,
+                            data=self.read(obj.address + i),
+                            last=True if (i == (obj.length - 1)) else False,
+                            deliver_at_ns=get_sim_time(units="ns")
+                            + self.random.randint(*self.response_delay),
+                        )
                     )
-                )
         # Once a matching AW and W request are available, respond
-        if self.q_awreq and self.q_wreq:
+        if self.q_awreq and (self.wlast_count > 0):
             awreq = self.q_awreq.pop(0)
             wreq = self.q_wreq.pop(0)
-            self.write(awreq.address, wreq.data, wreq.strobe)
+            self.wlast_count -= 1
+            write_addr = awreq.address
+            while True:
+                # Commit write to the memory
+                self.write(write_addr, wreq.data, wreq.strobe)
+                # Calculate next address in the burst
+                if awreq.burst == Burst.INCR:
+                    write_addr += 8
+                elif awreq.burst == Burst.WRAP:
+                    # TODO: Implement wrapping logic
+                    raise Exception("Model does not support wrapping bursts")
+                elif awreq.burst == Burst.FIXED:
+                    pass
+                else:
+                    raise Exception(f"Unsupported burst type {awreq.burst}")
+                # Stop iterating once LAST is seen
+                if wreq.last:
+                    break
+                # Otherwise, pop the next request
+                wreq = self.q_wreq.pop(0)
             self.brsp.enqueue(
-                AXI4LiteWriteResponse(
+                AXI4WriteResponse(
                     deliver_at_ns=get_sim_time(units="ns")
                     + self.random.randint(*self.response_delay),
                 )
