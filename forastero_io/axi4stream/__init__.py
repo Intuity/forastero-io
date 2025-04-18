@@ -4,7 +4,7 @@
 from .initiator import AXI4StreamInitiator
 from .io import AXI4StreamIO
 from .monitor import AXI4StreamMonitor
-from .sequences import axi4stream_backpressure_seq
+from .sequences import axi4stream_backpressure
 from .target import AXI4StreamTarget
 from .transaction import AXI4StreamBackpressure, AXI4StreamTransfer
 
@@ -17,6 +17,6 @@ assert all(
         AXI4StreamTarget,
         AXI4StreamTransfer,
         AXI4StreamBackpressure,
-        axi4stream_backpressure_seq,
+        axi4stream_backpressure,
     )
 )
