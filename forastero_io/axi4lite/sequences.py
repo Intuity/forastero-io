@@ -2,7 +2,8 @@
 # Copyright (c) 2023-2024 Vypercore. All Rights Reserved
 
 import forastero
-from forastero.driver import BaseDriver, DriverEvent, MonitorEvent
+from forastero.driver import BaseDriver, DriverEvent
+from forastero.monitor import MonitorEvent
 from forastero.sequence import SeqContext, SeqProxy
 
 from .initiator import (
