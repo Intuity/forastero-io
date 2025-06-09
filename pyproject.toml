@@ -8,9 +8,11 @@ readme = "README.md"
 packages = [{include = "forastero_io"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<4.0"
 forastero = "^1.0"
 
+[tool.poetry.group.dev]
+optional = true
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"
